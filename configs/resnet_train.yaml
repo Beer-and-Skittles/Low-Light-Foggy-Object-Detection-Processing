@@ -1,0 +1,29 @@
+# <Project>/configs/resnet_train.yaml
+train_list: data/splits/sample.txt
+class_names:
+  - bicycle
+  - boat
+  - bottle
+  - bus
+  - car
+  - cat
+  - chair
+  - cup
+  - dog
+  - motorbike
+  - people
+  - table
+
+img_size: 640
+batch_size: 2
+epochs: 3
+lr: 1.0e-4
+
+pretrained: true
+yolo_weights: yolov8n.pt
+device: cpu
+
+lambda_det: 1.0
+lambda_identity: 0.05
+
+out_dir: outputs/resnet_checkpoints

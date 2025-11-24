@@ -1,0 +1,18 @@
+# Ignore Python virtual environment
+yolo_venv/
+
+# Ignore outputs from training/evaluation
+outputs/
+runs/
+
+# General Python ignores 
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+*.pt
+
+# Editor/IDE files
+.vscode/
+.idea/
