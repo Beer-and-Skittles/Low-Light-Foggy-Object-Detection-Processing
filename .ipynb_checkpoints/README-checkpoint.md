@@ -266,3 +266,14 @@ Results saved to:
 outputs/tmp_resnet_eval/
 runs/detect/val*/            ← YOLO mAP tables
 ```
+### Miscelaneous
+* printing out yolo class names
+  ```
+    python3 - << 'PY'
+from ultralytics import YOLO
+m = YOLO("yolov8n.pt")
+print("\nYOLO class names:")
+for k, v in m.model.names.items():
+    print(k, ":", v)
+PY
+  ```

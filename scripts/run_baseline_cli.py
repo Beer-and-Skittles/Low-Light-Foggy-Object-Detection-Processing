@@ -1,11 +1,14 @@
-import argparse, subprocess, shutil, os, json
+import argparse, shutil, os, json
 from pathlib import Path
 from tqdm import tqdm
 from PIL import Image
 import numpy as np
 import xml.etree.ElementTree as ET
+from ultralytics import YOLO
 
 from preprocessing.baselines_pil import to_np, to_pil, clahe, gamma, retinex, hist_match
+from datasets.alias_mapping import ALIAS_TO_YOLO
+from datasets.anno_parsers import parse_exdark_bbgt, parse_rtts_voc
 
 
 # ------------------ Enhancement dispatch ------------------
@@ -31,119 +34,8 @@ def load_pairs(fpath):
     return pairs
 
 
-# ------------------ ExDark bbGt parser ------------------
-def parse_exdark_bbgt(txt_path, class2id, W, H):
-    """
-    ExDark bbGt format example:
-      % bbGt version=3
-      Car 740 918 1389 1150 0 0 0 0 0 0 0
-
-    We handle both possible conventions:
-      (xmin, ymin, xmax, ymax)  OR  (x, y, w, h)
-    via a simple heuristic.
-    """
-    labels = []
-    if txt_path is None or not txt_path.exists():
-        return labels
-
-    with open(txt_path, "r") as f:
-        lines = [ln.strip() for ln in f if ln.strip()]
-
-    for ln in lines:
-        if ln.startswith("%"):  # header
-            continue
-        parts = ln.split()
-        if len(parts) < 5:
-            continue
-
-        cls_name = parts[0].lower()
-        if cls_name not in class2id:
-            continue
-        cls_id = class2id[cls_name]
-
-        a, b, c, d = map(float, parts[1:5])
-
-        # heuristic: if c>d? no. if c>a and d>b and within bounds -> treat as xmax/ymax
-        if c > a and d > b and c <= W * 1.5 and d <= H * 1.5:
-            xmin, ymin, xmax, ymax = a, b, c, d
-        else:
-            # treat as x,y,w,h
-            xmin, ymin = a, b
-            xmax, ymax = a + c, b + d
-
-        # clamp
-        xmin = max(0, min(xmin, W - 1))
-        ymin = max(0, min(ymin, H - 1))
-        xmax = max(0, min(xmax, W - 1))
-        ymax = max(0, min(ymax, H - 1))
-        if xmax <= xmin or ymax <= ymin:
-            continue
-
-        # YOLO normalize
-        x_c = (xmin + xmax) / 2.0 / W
-        y_c = (ymin + ymax) / 2.0 / H
-        w_n = (xmax - xmin) / W
-        h_n = (ymax - ymin) / H
-
-        labels.append((cls_id, x_c, y_c, w_n, h_n))
-
-    return labels
-
-
-# ------------------ RTTS VOC XML parser ------------------
-def parse_rtts_voc(xml_path, class2id, W, H):
-    """
-    RTTS VOC xml:
-      <object><name>bus</name><bndbox>...</bndbox></object>
-    """
-    labels = []
-    if xml_path is None or not xml_path.exists():
-        return labels
-
-    tree = ET.parse(xml_path)
-    root = tree.getroot()
-
-    for obj in root.findall("object"):
-        name = obj.findtext("name")
-        if name is None:
-            continue
-        cls_name = name.lower()
-        if cls_name not in class2id:
-            continue
-        cls_id = class2id[cls_name]
-
-        box = obj.find("bndbox")
-        if box is None:
-            continue
-
-        xmin = float(box.findtext("xmin", 0))
-        ymin = float(box.findtext("ymin", 0))
-        xmax = float(box.findtext("xmax", 0))
-        ymax = float(box.findtext("ymax", 0))
-
-        xmin = max(0, min(xmin, W - 1))
-        ymin = max(0, min(ymin, H - 1))
-        xmax = max(0, min(xmax, W - 1))
-        ymax = max(0, min(ymax, H - 1))
-        if xmax <= xmin or ymax <= ymin:
-            continue
-
-        x_c = (xmin + xmax) / 2.0 / W
-        y_c = (ymin + ymax) / 2.0 / H
-        w_n = (xmax - xmin) / W
-        h_n = (ymax - ymin) / H
-
-        labels.append((cls_id, x_c, y_c, w_n, h_n))
-
-    return labels
-
-
 def write_yolo_label_file(label_path, labels):
-    """
-    labels: list of (cls_id, x_c, y_c, w_n, h_n)
-    """
     if not labels:
-        # YOLO allows missing/empty label files. Create empty file for clarity.
         label_path.write_text("")
         return
     with open(label_path, "w") as f:
@@ -151,6 +43,7 @@ def write_yolo_label_file(label_path, labels):
             f.write(f"{cls_id} {x_c:.6f} {y_c:.6f} {w_n:.6f} {h_n:.6f}\n")
 
 
+# ------------------ MAIN ------------------
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--test_list", required=True)
@@ -162,6 +55,7 @@ def main():
     ap.add_argument("--device", default="cpu")
     args = ap.parse_args()
 
+    # fresh temp dir
     out_root = Path(args.temp_dir)
     if out_root.exists():
         shutil.rmtree(out_root)
@@ -171,10 +65,16 @@ def main():
     labels_dir.mkdir(parents=True, exist_ok=True)
 
     # class mapping
-    class_names = json.load(open(args.class_names_json))
-    class2id = {n.lower(): i for i, n in enumerate(class_names)}
+    from datasets.class_mapping import build_class2yolo_id
 
-    # reference image (for hist-match only)
+    class2id, class_names = build_class2yolo_id(
+        args.class_names_json,
+        yolo_weights="yolov8n.pt"
+    )
+    print("class2id", class2id)
+    print("class_names", class_names)
+
+    # reference for hist-match
     ref_np = None
     if args.method == "hist_match":
         if args.reference is None:
@@ -183,7 +83,7 @@ def main():
 
     pairs = load_pairs(args.test_list)
 
-    # -------- main loop: enhance + generate YOLO labels on the fly --------
+    # -------- enhancement + YOLO-label generation --------
     for img_path, anno_path in tqdm(pairs, desc=f"Enhancing {args.method}"):
         pil_img = Image.open(img_path).convert("RGB")
         W, H = pil_img.size
@@ -192,11 +92,9 @@ def main():
         out_np = enhance(img_np, args.method, ref_np)
         out_pil = to_pil(out_np)
 
-        # save enhanced image
         out_img_path = images_dir / img_path.name
         out_pil.save(out_img_path)
 
-        # parse original annotation into YOLO labels
         labels = []
         if anno_path is not None:
             suf = anno_path.suffix.lower()
@@ -205,11 +103,10 @@ def main():
             elif suf == ".txt":
                 labels = parse_exdark_bbgt(anno_path, class2id, W, H)
 
-        # YOLO label filename must match image stem
         out_label_path = labels_dir / f"{img_path.stem}.txt"
         write_yolo_label_file(out_label_path, labels)
 
-    # -------- write valid YOLO dataset YAML --------
+    # YOLO dataset YAML
     yaml_path = out_root / "data.yaml"
     yaml_path.write_text(
         f"path: {out_root.resolve()}\n"
@@ -219,24 +116,21 @@ def main():
         f"names: {class_names}\n"
     )
 
-    # -------- run YOLO val --------
-    cmd = [
-        "yolo", "val",
-        "model=yolov8n.pt",
-        f"data={yaml_path}",
-        "split=test",
-        "workers=0",
-        "batch=1",
-        f"device={args.device}",
-    ]
+    # -------- Run YOLO eval IN PYTHON (no CLI needed) --------
+    det = YOLO("yolov8n.pt")
+    metrics = det.val(
+        data=str(yaml_path),
+        split="test",
+        device=args.device,
+        workers=0,
+        batch=1,
+        verbose=True,
+    )
 
-    env = os.environ.copy()
-    env["OMP_NUM_THREADS"] = "1"
-    env["MKL_NUM_THREADS"] = "1"
-    env["CUDA_VISIBLE_DEVICES"] = ""  # force CPU safety
-
-    subprocess.run(cmd, env=env, check=True)
-    print("Done.")
+    print("\n=== YOLO Evaluation Complete ===")
+    print(f"mAP50:     {metrics.box.map50:.4f}")
+    print(f"mAP50-95:  {metrics.box.map:.4f}")
+    print("Results saved to:", metrics.save_dir)
 
 
 if __name__ == "__main__":
