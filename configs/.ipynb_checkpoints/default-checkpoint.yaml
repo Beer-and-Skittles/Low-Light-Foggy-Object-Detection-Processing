@@ -1,0 +1,21 @@
+# <Project>/configs/default.yaml
+
+project_root: ".."   # relative to <Project>/scripts if you run from <Project>
+data_root: ".."      # where ExDark/RTTS folders live (same parent as <Project>)
+
+splits:
+  train_ratio: 0.8
+  seed: 1234
+  exdark:
+    include: true
+  rtts:
+    include: true
+
+paths:
+  exdark_images: "ExDark"
+  exdark_annos: "ExDark_Anno"
+  rtts_images: "RTTS"
+  rtts_annos: "RTTS_Anno"
+
+output:
+  split_dir: "data/splits"   # inside <Project>
