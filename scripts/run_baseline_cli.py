@@ -21,6 +21,10 @@ def enhance(img_np, method, ref_np=None):
         return retinex(img_np)
     if method == "hist_match":
         return hist_match(img_np, ref_np)
+    if method == "clahe_gamma":
+        return gamma(clahe(img_np))
+    if method == "none":
+        return img_np
     raise ValueError(method)
 
 
@@ -48,7 +52,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--test_list", required=True)
     ap.add_argument("--method", required=True,
-                    choices=["clahe", "gamma", "retinex", "hist_match"])
+                    choices=["none", "clahe", "gamma", "retinex", "hist_match", "clahe_gamma"])
     ap.add_argument("--class_names_json", required=True)
     ap.add_argument("--reference", default=None)
     ap.add_argument("--temp_dir", default="outputs/tmp")
@@ -58,7 +62,7 @@ def main():
     # fresh temp dir
     out_root = Path(args.temp_dir)
     if out_root.exists():
-        shutil.rmtree(out_root)
+       shutil.rmtree(out_root)
     images_dir = out_root / "images" / "test"
     labels_dir = out_root / "labels" / "test"
     images_dir.mkdir(parents=True, exist_ok=True)
@@ -106,6 +110,12 @@ def main():
         out_label_path = labels_dir / f"{img_path.stem}.txt"
         write_yolo_label_file(out_label_path, labels)
 
+    
+
+    # -------- Run YOLO eval IN PYTHON (no CLI needed) --------
+    det = YOLO("yolov8n.pt")
+
+
     # YOLO dataset YAML
     yaml_path = out_root / "data.yaml"
     yaml_path.write_text(
@@ -115,9 +125,7 @@ def main():
         f"test: images/test\n"
         f"names: {class_names}\n"
     )
-
-    # -------- Run YOLO eval IN PYTHON (no CLI needed) --------
-    det = YOLO("yolov8n.pt")
+    
     metrics = det.val(
         data=str(yaml_path),
         split="test",
@@ -125,6 +133,7 @@ def main():
         workers=0,
         batch=1,
         verbose=True,
+        # classes=[1, 8, 39, 5, 2, 15, 56, 41, 16, 3, 0, 60]
     )
 
     print("\n=== YOLO Evaluation Complete ===")

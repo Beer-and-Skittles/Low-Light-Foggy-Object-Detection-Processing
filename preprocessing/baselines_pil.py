@@ -17,13 +17,13 @@ def clahe(img_np):
 def gamma(img_np, g=0.6):
     return (img_np / 255.0) ** g * 255.0
 
-def retinex(img_np, sigma=80):
+def retinex(img_np, sigma=20):
     img_float = img_np / 255.0
     blurred = np.zeros_like(img_float)
     for c in range(3):
         blurred[..., c] = filters.gaussian(img_float[..., c], sigma=sigma)
     ret = np.log(img_float + 1e-6) - np.log(blurred + 1e-6)
-    ret = (ret - ret.min()) / (ret.max() - ret.max() + 1e-6)
+    ret = (ret - ret.min()) / (ret.max() - ret.min() + 1e-6)
     return ret * 255.0
 
 def hist_match(img_np, ref_np):

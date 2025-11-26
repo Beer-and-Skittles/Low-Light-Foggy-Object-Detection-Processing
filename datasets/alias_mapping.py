@@ -19,7 +19,7 @@ ALIAS_TO_YOLO = {
     "cat" : "cat",
     "chair" : "chair",
     "cup" : "cup",
-    "cog" : "dog",
+    "dog" : "dog",
     "motorbike" : "motorcycle",
     "people" : "person",
     "table" : "dining table"
