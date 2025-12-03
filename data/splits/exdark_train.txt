@@ -4354,7 +4354,7 @@
 /home/yah033/ExDark/Cat/2015_03703.jpg	/home/yah033/ExDark_Anno/Cat/2015_03703.jpg.txt
 /home/yah033/ExDark/Chair/2015_03840.jpg	/home/yah033/ExDark_Anno/Chair/2015_03840.jpg.txt
 /home/yah033/ExDark/Chair/2015_04067.jpg	/home/yah033/ExDark_Anno/Chair/2015_04067.jpg.txt
-/home/yah033/ExDark/Bicycle/2015_00391.JPG	
+/home/yah033/ExDark/Bicycle/2015_00391.jpg	/home/yah033/ExDark_Anno/Bicycle/2015_00391.jpg.txt
 /home/yah033/ExDark/Boat/2015_00738.jpg	/home/yah033/ExDark_Anno/Boat/2015_00738.jpg.txt
 /home/yah033/ExDark/Bus/2015_02248.JPG	/home/yah033/ExDark_Anno/Bus/2015_02248.JPG.txt
 /home/yah033/ExDark/Boat/2015_01231.jpg	/home/yah033/ExDark_Anno/Boat/2015_01231.jpg.txt
