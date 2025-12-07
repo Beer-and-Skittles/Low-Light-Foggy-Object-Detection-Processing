@@ -227,8 +227,9 @@ runs/detect/<temp_dir>/            ← YOLO mAP results
 ### 2. **[TODO]** Train & Evaluate AOD-Net
 Train Resnet:
 ```
-python -m train.train_aod_taskaware \
-  --cfg configs/aod_train.yaml
+python -m scripts.train_aod_taskaware \
+  --cfg configs/aod_train.yaml \
+  --log_path outputs/aod_loss.txt
 ```
 
 Adjust input and model configuration in:

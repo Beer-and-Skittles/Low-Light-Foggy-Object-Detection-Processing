@@ -38,7 +38,7 @@ def main():
     ap.add_argument("--class_names_json", required=True)
     ap.add_argument("--img_size", type=int, default=640)
     ap.add_argument("--temp_dir", default="outputs/tmp_aod_eval")
-    ap.add_argument("--device", default="cpu")
+    ap.add_argument("--device", default="cuda")
     ap.add_argument("--save_samples", action="store_true",
                     help="save a few enhanced images for report")
     ap.add_argument("--num_samples", type=int, default=20)

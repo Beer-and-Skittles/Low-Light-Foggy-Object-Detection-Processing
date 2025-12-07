@@ -220,15 +220,16 @@ python -m scripts.run_baseline_cli \
 
 Outputs goes to
 ```
-outputs/<temp_dir>/                  ← temp YOLO dataset
+outputs/<temp_dir>/                ← temp YOLO dataset
 runs/detect/<temp_dir>/            ← YOLO mAP results
 ```
 
 ### 2. **[TODO]** Train & Evaluate AOD-Net
 Train Resnet:
 ```
-python -m train.train_aod_taskaware \
-  --cfg configs/aod_train.yaml
+python -m scripts.train_aod_taskaware \
+  --cfg configs/aod_train.yaml \
+  --log_path outputs/aod_loss.txt
 ```
 
 Adjust input and model configuration in:
