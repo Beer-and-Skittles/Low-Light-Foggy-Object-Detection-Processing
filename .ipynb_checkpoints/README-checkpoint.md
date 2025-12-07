@@ -190,22 +190,38 @@ Each of these files contain:
 /full/path/to/image.png    /full/path/to/annotation
 ```
 
-### 1. **[TODO]** Run Baselines
+### 1. Run Baselines
+#### Preparation
 ```
 python -m scripts.run_baseline_cli \
-  --test_list data/splits/<dataset> \
-  --method <method> \
-  --class_names_json data/class_names.json \
-  --device <device>
+--stage prepare \
+--test_list data/splits/<dataset> \
+--method <method> \
+
 ```
+
+#### Evaluation
+```
+python -m scripts.run_baseline_cli \
+--stage eval \
+--temp_dir outputs/<temp_dir>
+```
+
 * `<dataset>` = `exdark_test.txt` / `rtts_test.txt` / `comtined_test.txt`
 * `<method>` = `clahe` / `gamma` / `retinex`
-* `<device>` = `cpu` / `cuda`
+
+#### Preparation & Evaluation
+```
+python -m scripts.run_baseline_cli \
+--stage all \
+--test_list data/splits/<dataset> \
+--method <method>
+```
 
 Outputs goes to
 ```
-outputs/tmp/                  ← temp YOLO dataset
-runs/detect/val*/            ← YOLO mAP results
+outputs/<temp_dir>/                  ← temp YOLO dataset
+runs/detect/<temp_dir>/            ← YOLO mAP results
 ```
 
 ### 2. **[TODO]** Train & Evaluate AOD-Net
