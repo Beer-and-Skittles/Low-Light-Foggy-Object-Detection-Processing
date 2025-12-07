@@ -17,9 +17,6 @@ def clahe(img_np):
 def gamma(img_np, g=0.6):
     return (img_np / 255.0) ** g * 255.0
 
-def none(img_np):
-    return img_np
-
 def retinex(img_np, sigma=20):
     img_float = img_np / 255.0
     blurred = np.zeros_like(img_float)
