@@ -31,6 +31,20 @@ def main(cfg):
 
     # -------------------- AOD-Net --------------------
     aod = AODNet().to(device)
+        # ----- Sanity check: is AODNet initially identity? -----
+    aod.eval()
+    with torch.no_grad():
+        batch = next(iter(dl))
+        imgs = batch["img"].to(device)  # assumed in [0,1]
+        enh, k = aod(imgs)
+
+        diff = (enh - imgs).abs().mean().item()
+        k_mean = k.mean().item()
+        k_min = k.min().item()
+        k_max = k.max().item()
+
+        print(f"[AOD Identity Check] mean |enh - img| = {diff:.8f}")
+        print(f"[AOD Identity Check] k stats: mean={k_mean:.6f}, min={k_min:.6f}, max={k_max:.6f}")
 
     # -------------------- YOLO Teacher (Frozen) --------------------
     from types import SimpleNamespace
