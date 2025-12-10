@@ -1,0 +1,18 @@
+# <Project>/configs/aod_train.yaml
+train_list: data/splits/rtts_train.txt
+
+img_size: 640
+batch_size: 8
+epochs: 5
+lr: 5.0e-4
+
+class_names_json: data/class_names.json
+yolo_weights: yolov8n.pt
+device: cuda
+
+lambda_det: 1.0
+lambda_identity: 0.05
+
+out_dir: outputs/aod_test
+ckpt_path: outputs/aod_test/best.pt
+log_path: outputs/aod_test.txt

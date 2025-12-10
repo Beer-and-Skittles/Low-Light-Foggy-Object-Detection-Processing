@@ -15,5 +15,5 @@ lambda_det: 1.0
 lambda_identity: 0.05
 
 out_dir: outputs/resnet_exdark_checkpoints
-ckpt_path: outputs/resnet_exdark_checkpoints/best.pt
+ckpt_path: outputs/resnet_exdark_checkpoints/resnet_best.pt
 log_path: outputs/resnet_exdark_log.txt

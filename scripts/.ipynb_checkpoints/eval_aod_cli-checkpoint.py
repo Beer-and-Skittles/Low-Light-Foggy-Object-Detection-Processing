@@ -35,7 +35,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--split_list", required=True, help="train/test list txt")
     ap.add_argument("--ckpt", required=True, help="path to aod_epoch*.pt")
-    ap.add_argument("--class_names_json", required=True)
+    ap.add_argument("--class_names_json", default="data/class_names.json")
     ap.add_argument("--img_size", type=int, default=640)
     ap.add_argument("--temp_dir", default="outputs/tmp_aod_eval")
     ap.add_argument("--device", default="cuda")
