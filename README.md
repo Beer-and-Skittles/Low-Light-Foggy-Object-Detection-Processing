@@ -257,7 +257,7 @@ runs/detect/val*/            ← YOLO mAP tables
 
 ### 3. **[TODO]** Train & Evaluate ResNet Enhancer
 ```
-python -m train.train_resnet_taskaware \
+python -m scripts.train_resnet_taskaware \
   --cfg configs/resnet_train.yaml
 ```
 
